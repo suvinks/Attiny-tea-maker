@@ -1,0 +1,130 @@
+// **** ATtiny Tea Maker v1.0 **** //
+// Developed by Suvin KS
+// Based on http://letsmakerobots.com/blog/jerz/attiny-servo-control
+// Initial   : Aug 20, 2014
+// Modified  : Sep 10, 2014
+
+const byte servo  =    0;         // Servo pin on ATtiny
+const byte buzzer =    1;         // Buzzer pin on ATtiny
+const int  timer  =    A1;        // Potentiometer pin on ATtiny Analog IN
+
+// Make sure you select ATTiny 85 with 1MHz internal clock option in the Arduino IDE
+
+int tPulse        =  4000;         // Total pulse length on 1 Mhz clock 
+int hPulse        =   60;         // High pulse time (60=0deg -> 280=180deg)
+bool Dir          =    1;         // Servo direction
+
+int myMax = 210;                  // Servo Arm maximum position (pulled up)
+int myMin = 175;                  // Servo Arm minimum position (pulled down)
+int sensorValue = 0;
+int mappedValue = 0;
+int brewingTime = 0;
+
+void setup() {             
+  
+  pinMode(servo, OUTPUT);   // Setting PB0 as output
+  pinMode(buzzer, OUTPUT);  // Setting PB1 as Output
+  pinMode(timer,INPUT);     // Setting A1  as Input
+  digitalWrite(buzzer,HIGH);
+  
+  //Initial Delay
+  //Pull up and wait for 15 seconds to get the teabag  tied to the Hand. 
+  pullup();
+  //Close to 10 sec delay before we start the process
+ delay(10000);
+ buzzOnce();
+ sensorValue = analogRead(timer);
+ mappedValue = map(sensorValue,0,1025,0,5) + 1;
+  
+  //Start the dipping procedure 4 times = 1 minute
+  brewingTime = 4 * mappedValue;
+  //brewingTime = 2;
+  
+  for (int i = 1; i<= brewingTime; i++)
+  {
+     dipper();
+  }
+  
+  //Brewing Over
+  pullup();  
+  buzz();
+  
+}
+
+void buzzOnce()
+{
+      digitalWrite(buzzer,HIGH);    // Buzzer Off as per the circuit
+      delay(100);
+      digitalWrite(buzzer,LOW);     // Buzzer On as per the circuit
+      delay(200);  
+      digitalWrite(buzzer,HIGH);
+}
+void buzz()
+{
+  // Five Beeps
+  for (int i = 1; i <= 5; i ++)
+    {
+      digitalWrite(buzzer,HIGH);    // Buzzer Off as per the circuit
+      delay(200);
+      digitalWrite(buzzer,LOW);     // Buzzer On as per the circuit
+      delay(300*i);
+    }
+    digitalWrite(buzzer,HIGH);
+}
+
+
+void loop()
+{
+  // Put it there so that the sketch would compile.
+}
+
+void pullup()
+{
+  hPulse = 175;
+  Dir = 1;
+  while(hPulse < myMax)
+  {
+    digitalWrite(servo, HIGH);                // Set pin high to start pulse
+    delayMicroseconds(hPulse);                // High pulse angle data   
+    digitalWrite(servo,LOW);                  // Set low for the rest of pulse
+    delayMicroseconds(tPulse-hPulse);
+    
+    if (hPulse < myMax && Dir == 1) hPulse+=10; // Rotate servo to 180 degrees
+    else if (hPulse >= myMax && Dir == 1){      // Servo hit upper limit
+      hPulse = myMax;                           // Keep servo angle in bounds
+ //     Dir=!Dir;                               // Switch direction
+    }
+    delayMicroseconds(500);// Give servo some time to move before giving it a new position
+  }
+}
+
+void dipper() {
+  for(int i = 0;i <= 24;i++)
+  {
+    digitalWrite(servo, HIGH);                // Set pin high to start pulse
+    delayMicroseconds(hPulse);                // High pulse angle data   
+    digitalWrite(servo,LOW);                  // Set low for the rest of pulse
+    delayMicroseconds(tPulse-hPulse);
+    
+    if (hPulse < myMax && Dir == 1) 
+    {
+      hPulse+=15;                             // Rotate servo to 180 degrees
+      delayMicroseconds(100);
+    }
+    else if (hPulse >= myMax && Dir == 1){      // Servo hit upper limit
+      hPulse = myMax;                           // Keep servo angle in bounds
+      Dir=!Dir;                               // Switch direction
+    }
+    if (hPulse > myMin && Dir == 0) 
+    {  
+      hPulse-=15;  // Rotate servo to 0 degrees
+      delayMicroseconds(100);
+    }
+    else if (hPulse <= myMin && Dir == 0){       // Servo hit lower limit
+      hPulse = myMin;                            // Keep servo angle in bounds
+      Dir=!Dir;            // switch direction
+      delay(100);
+    }
+    delay(500); // Give servo some time to move before giving it a new position
+  }
+}
